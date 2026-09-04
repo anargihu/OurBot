@@ -38,7 +38,9 @@ client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === "ping") {
-    await interaction.reply("🏓 Pong!");
+    const sent = await interaction.reply({ content: "🏓 Pong!", fetchReply: true });
+    const latency = sent.createdTimestamp - interaction.createdTimestamp;
+    await interaction.editReply(`🏓 Pong! Latency: ${latency}ms | WS: ${client.ws.ping}ms`);
   }
 });
 
