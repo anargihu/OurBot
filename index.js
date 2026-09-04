@@ -1,22 +1,30 @@
 require("dotenv").config();
 
+const fs = require("fs");
+const path = require("path");
 const {
   Client,
+  Collection,
   GatewayIntentBits,
   REST,
-  Routes,
-  SlashCommandBuilder
+  Routes
 } = require("discord.js");
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-const commands = [
-  new SlashCommandBuilder()
-    .setName("ping")
-    .setDescription("Check if OurBot is online")
-].map(command => command.toJSON());
+client.commands = new Collection();
+
+const commandsPath = path.join(__dirname, "Commands");
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
+
+for (const file of commandFiles) {
+  const command = require(path.join(commandsPath, file));
+  client.commands.set(command.data.name, command);
+}
+
+const commands = [...client.commands.values()].map(command => command.data.toJSON());
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
@@ -37,10 +45,20 @@ client.once("ready", async () => {
 client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
-  if (interaction.commandName === "ping") {
-    const sent = await interaction.reply({ content: "🏓 Pong!", fetchReply: true });
-    const latency = sent.createdTimestamp - interaction.createdTimestamp;
-    await interaction.editReply(`🏓 Pong! Latency: ${latency}ms | WS: ${client.ws.ping}ms`);
+  const command = client.commands.get(interaction.commandName);
+
+  if (!command) return;
+
+  try {
+    await command.execute(interaction, client);
+  } catch (error) {
+    console.error(error);
+
+    if (interaction.replied || interaction.deferred) {
+      await interaction.editReply("❌ Something went wrong.");
+    } else {
+      await interaction.reply("❌ Something went wrong.");
+    }
   }
 });
 
