@@ -1,6 +1,12 @@
 require("dotenv").config();
 
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require("discord.js");
+const {
+  Client,
+  GatewayIntentBits,
+  REST,
+  Routes,
+  SlashCommandBuilder
+} = require("discord.js");
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
@@ -14,15 +20,18 @@ const commands = [
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
-client.once("ready", async () => {
-  console.log(`OurBot is online as ${client.user.tag}`);
-
+async function registerCommands() {
   await rest.put(
-    Routes.applicationCommands(client.user.id),
+    Routes.applicationCommands(process.env.CLIENT_ID),
     { body: commands }
   );
 
-  console.log("Slash commands registered.");
+  console.log("Global slash commands registered.");
+}
+
+client.once("clientReady", async () => {
+  console.log(`OurBot is online as ${client.user.tag}`);
+  await registerCommands();
 });
 
 client.login(process.env.DISCORD_TOKEN);
