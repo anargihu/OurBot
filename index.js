@@ -29,9 +29,17 @@ async function registerCommands() {
   console.log("Global slash commands registered.");
 }
 
-client.once("clientReady", async () => {
+client.once("ready", async () => {
   console.log(`OurBot is online as ${client.user.tag}`);
   await registerCommands();
+});
+
+client.on("interactionCreate", async interaction => {
+  if (!interaction.isChatInputCommand()) return;
+
+  if (interaction.commandName === "ping") {
+    await interaction.reply("🏓 Pong!");
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
